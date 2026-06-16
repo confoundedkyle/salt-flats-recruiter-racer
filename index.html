@@ -305,25 +305,23 @@
 
       splash.classList.add('hidden');
 
-      // Remove from DOM after fade so it can't block clicks
       splash.addEventListener('transitionend', () => splash.remove(), { once: true });
 
-      audio.play().catch(() => {
-        // autoplay still blocked in some contexts — audio controls visible so user can manually play
-      });
+      audio.play().catch(() => {});
     }
 
-    // Clicking anywhere on the splash (not just the button) also starts
     document.getElementById('splash').addEventListener('click', function(e) {
       if (e.target.id !== 'start-btn') startExperience();
     });
 
     document.getElementById('track').addEventListener('ended', () => {
-    document.querySelector('.btn.primary').classList.add('pulsing');
+      document.querySelector('.btn.primary').classList.add('pulsing');
     });
 
     function goNext() {
-   </script>
+      alert('Next page coming soon — swap this handler with your target URL or function.');
+    }
+  </script>
 
 </body>
 </html>
