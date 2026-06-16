@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Salt Flats Racer</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sky:    #3db4f0;
+      --sand:   #d4843a;
+      --red:    #d4202a;
+      --white:  #f5f5f5;
+      --dark:   #1a1108;
+      --panel:  rgba(26, 17, 8, 0.72);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--dark);
+      font-family: 'Inter', sans-serif;
+      color: var(--white);
+      overflow: hidden;
+    }
+
+    /* ── full-bleed image layer ── */
+    #scene {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #scene img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center center;
+      filter: saturate(1.15);
+    }
+
+    /* ── dust-streak animation overlay ── */
+    #scene::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        100deg,
+        transparent 0%,
+        transparent 48%,
+        rgba(212, 132, 58, 0.06) 50%,
+        transparent 52%
+      );
+      animation: dustMove 3s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes dustMove {
+      from { background-position: 0 0; }
+      to   { background-position: 200px 0; }
+    }
+
+    /* ── HUD panel at bottom ── */
+    #hud {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 24px 18px;
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border-top: 2px solid var(--sand);
+    }
+
+    #badge {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 3rem;
+      line-height: 1;
+      color: var(--red);
+      text-shadow: 0 0 18px rgba(212,32,42,0.6);
+      min-width: 52px;
+      text-align: center;
+    }
+
+    #hud audio {
+      flex: 1;
+      min-width: 0;
+      height: 36px;
+      border-radius: 18px;
+      accent-color: var(--red);
+    }
+
+    audio::-webkit-media-controls-panel {
+      background: rgba(26,17,8,0.85);
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border: 2px solid var(--sand);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--white);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.1rem;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: background 0.18s, color 0.18s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .btn:hover { background: var(--sand); color: var(--dark); }
+    .btn:active { transform: scale(0.96); }
+
+    .btn.primary { border-color: var(--red); color: var(--red); }
+    .btn.primary:hover { background: var(--red); color: var(--white); }
+
+    @keyframes slideUp {
+      from { transform: translateY(80px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    #hud { animation: slideUp 0.5s cubic-bezier(.22,.68,0,1.2) both; }
+
+    #title {
+      position: fixed;
+      top: 18px;
+      left: 22px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      letter-spacing: 0.12em;
+      color: var(--white);
+      text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+      pointer-events: none;
+      z-index: 10;
+    }
+    #title span { color: var(--red); }
+
+    /* ── SPLASH SCREEN ── */
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--dark);
+      cursor: pointer;
+      transition: opacity 0.6s ease;
+    }
+    #splash.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* speed lines radiating out */
+    #splash-lines {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+    #splash-lines::before {
+      content: '';
+      position: absolute;
+      inset: -50%;
+      background: repeating-conic-gradient(
+        from 0deg at 50% 50%,
+        rgba(212, 132, 58, 0.07) 0deg,
+        transparent 2deg,
+        transparent 10deg
+      );
+      animation: spinLines 12s linear infinite;
+    }
+    @keyframes spinLines {
+      to { transform: rotate(360deg); }
+    }
+
+    #splash-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+      text-align: center;
+      padding: 24px;
+    }
+
+    /* preview thumbnail */
+    #splash-thumb {
+      width: min(320px, 72vw);
+      border-radius: 12px;
+      border: 3px solid var(--sand);
+      box-shadow: 0 0 40px rgba(212,132,58,0.35);
+      display: block;
+    }
+
+    #splash-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.4rem, 8vw, 4.2rem);
+      letter-spacing: 0.14em;
+      line-height: 1;
+      color: var(--white);
+      text-shadow: 3px 3px 0 var(--red);
+    }
+    #splash-logo span { color: var(--red); }
+
+    #splash-sub {
+      font-size: 0.85rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--sand);
+      opacity: 0.85;
+    }
+
+    /* pulsing start button */
+    #start-btn {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      letter-spacing: 0.18em;
+      padding: 16px 52px;
+      background: var(--red);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      animation: pulse 1.8s ease-in-out infinite;
+      box-shadow: 0 0 0 0 rgba(212,32,42,0.7);
+    }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0   rgba(212,32,42,0.7); }
+      60%  { box-shadow: 0 0 0 18px rgba(212,32,42,0);  }
+      100% { box-shadow: 0 0 0 0   rgba(212,32,42,0);   }
+    }
+    #start-btn:hover { background: #b81a22; }
+
+    #splash-hint {
+      font-size: 0.75rem;
+      color: rgba(245,245,245,0.4);
+      letter-spacing: 0.1em;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── SPLASH ── -->
+  <div id="splash">
+    <div id="splash-lines"></div>
+    <div id="splash-content">
+      <img id="splash-thumb" src="1781635579772.png" alt="Salt Flats Racer preview" />
+      <div id="splash-logo">SALT FLATS <span>RACER</span></div>
+      <div id="splash-sub">An Adventure Begins on the Open Desert</div>
+      <button id="start-btn" onclick="startExperience()">&#9654;&nbsp; START</button>
+      <div id="splash-hint">click anywhere to begin</div>
+    </div>
+  </div>
+
+  <!-- ── MAIN PAGE ── -->
+  <div id="title">SALT FLATS <span>RACER</span></div>
+
+  <div id="scene">
+    <img id="hero" src="1781635579772.png" alt="Salt Flats Racer cartoon illustration" />
+  </div>
+
+  <div id="hud">
+    <div id="badge">5</div>
+
+    <audio id="track" controls loop>
+      <source src="Page1_Salt_Flats.mp3" type="audio/mpeg" />
+      Your browser does not support audio.
+    </audio>
+
+    <button class="btn primary" onclick="goNext()">
+      NEXT &rarr;
+    </button>
+
+    <button class="btn" onclick="location.reload()">
+      &#x21bb; RESTART
+    </button>
+  </div>
+
+  <script>
+    function startExperience() {
+      const splash = document.getElementById('splash');
+      const audio  = document.getElementById('track');
+
+      splash.classList.add('hidden');
+
+      // Remove from DOM after fade so it can't block clicks
+      splash.addEventListener('transitionend', () => splash.remove(), { once: true });
+
+      audio.play().catch(() => {
+        // autoplay still blocked in some contexts — audio controls visible so user can manually play
+      });
+    }
+
+    // Clicking anywhere on the splash (not just the button) also starts
+    document.getElementById('splash').addEventListener('click', function(e) {
+      if (e.target.id !== 'start-btn') startExperience();
+    });
+
+    function goNext() {
+      alert('Next page coming soon — swap this handler with your target URL or function.');
+    }
+  </script>
+
+</body>
+</html>
